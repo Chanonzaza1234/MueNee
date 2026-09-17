@@ -86,13 +86,13 @@ export default function LandingPage() {
 
       <div className="relative z-10 flex min-h-screen flex-col">
         <header className="w-full border-b border-white/15 bg-white/10 backdrop-blur-sm sticky top-0 z-30">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+          <div className="w-full flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 sm:h-18">
+            <div className="flex items-center gap-2.5 min-w-0">
               <span className="text-2xl sm:text-3xl select-none" role="img" aria-label="กระทะไข่ดาว">
                 🍳
               </span>
-              <div className="flex flex-col">
-                <span className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm">
+              <div className="flex flex-col min-w-0">
+                <span className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm whitespace-nowrap">
                   MueNee
                 </span>
               </div>
@@ -100,7 +100,7 @@ export default function LandingPage() {
 
             <Link
               href="/filter"
-              className="text-xs sm:text-sm font-bold text-white hover:text-orange-100 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors border border-white/20 flex items-center gap-1.5 backdrop-blur-sm"
+              className="text-xs sm:text-sm font-bold text-white hover:text-orange-100 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors border border-white/20 flex items-center gap-1.5 backdrop-blur-sm whitespace-nowrap shrink-0"
             >
               <span>🔎</span>
               <span>ตัวกรองเมนู</span>
