@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Menu {
+  id          Int              @id @default(autoincrement())
+  name        String
+  texture     String?
+  price       Float
+
+  ingredients MenuIngredient[]
+  categories  MenuCategory[]
+  flavors     MenuFlavor[]
+
+  @@map("menus")
+}
+
+model Ingredient {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+
+  menus MenuIngredient[]
+
+  @@map("ingredients")
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+
+  menus MenuCategory[]
+
+  @@map("categories")
+}
+
+model Flavor {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+
+  menus MenuFlavor[]
+
+  @@map("flavors")
+}
+
+model MenuIngredient {
+  menuId       Int
+  ingredientId Int
+
+  menu       Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@id([menuId, ingredientId])
+  @@map("menu_ingredients")
+}
+
+model MenuCategory {
+  menuId     Int
+  categoryId Int
+
+  menu     Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([menuId, categoryId])
+  @@map("menu_categories")
+}
+
+model MenuFlavor {
+  menuId   Int
+  flavorId Int
+
+  menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  flavor Flavor @relation(fields: [flavorId], references: [id], onDelete: Cascade)
+
+  @@id([menuId, flavorId])
+  @@map("menu_flavors")
+}

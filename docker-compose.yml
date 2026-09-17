@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: muenee_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: muenee
+      POSTGRES_USER: muenee
+      POSTGRES_PASSWORD: muenee_dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - muenee_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U muenee -d muenee"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  muenee_postgres_data:
