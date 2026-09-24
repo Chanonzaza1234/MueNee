@@ -16,6 +16,7 @@ model Menu {
   ingredients MenuIngredient[]
   categories  MenuCategory[]
   flavors     MenuFlavor[]
+  orderItems  OrderItem[]
 
   @@map("menus")
 }
@@ -78,4 +79,79 @@ model MenuFlavor {
 
   @@id([menuId, flavorId])
   @@map("menu_flavors")
+}
+
+// ----------------------------------------------------
+// NextAuth Models (Authentication)
+// ----------------------------------------------------
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  
+  accounts      Account[]
+  sessions      Session[]
+  orders        Order[]
+
+  @@map("users")
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ----------------------------------------------------
+// Order History Models (For Recommendations)
+// ----------------------------------------------------
+model Order {
+  id          String   @id @default(cuid())
+  userId      String
+  totalAmount Float
+  createdAt   DateTime @default(now())
+  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id       String @id @default(cuid())
+  orderId  String
+  menuId   Int
+  quantity Int
+
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menu     Menu  @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
 }

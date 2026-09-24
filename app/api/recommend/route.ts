@@ -6,83 +6,57 @@ import {
     scoreMenu,
     selectTopRecommendations,
     selectDiscoveryMenu,
+    applyHardFilters,
+    applyRelaxedFilters,
+    ScoredMenu
 } from "@/lib/recommendation";
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
+        const body = await request.json().catch(() => ({}));
 
         const input: RecommendationInput = {
-            ingredients: Array.isArray(body.ingredients)
-                ? body.ingredients
-                : [],
-
-            categories: Array.isArray(body.categories)
-                ? body.categories
-                : [],
-
-            flavors: Array.isArray(body.flavors)
-                ? body.flavors
-                : [],
-
-            budget:
-                body.budget === undefined ||
-                    body.budget === null ||
-                    body.budget === ""
-                    ? undefined
-                    : Number(body.budget),
+            ingredients: Array.isArray(body.ingredients) ? body.ingredients : [],
+            categories: Array.isArray(body.categories) ? body.categories : [],
+            flavors: Array.isArray(body.flavors) ? body.flavors : [],
+            budget: body.budget === undefined || body.budget === null || body.budget === "" 
+                ? undefined 
+                : Number(body.budget),
         };
 
         // ตรวจสอบงบประมาณ
-        if (
-            input.budget !== undefined &&
-            (!Number.isFinite(input.budget) || input.budget <= 0)
-        ) {
+        if (input.budget !== undefined && (!Number.isFinite(input.budget) || input.budget <= 0)) {
             return Response.json(
-                {
-                    success: false,
-                    message: "กรุณาระบุงบประมาณให้ถูกต้อง",
-                },
+                { success: false, message: "กรุณาระบุงบประมาณให้ถูกต้อง" },
                 { status: 400 }
             );
         }
 
-        // อ่านข้อมูลเมนูจาก Excel
+        // อ่านข้อมูลเมนูจากฐานข้อมูล
         const menus = await getMenusFromDb();
 
-        // Filter เมนูตามงบ
-        const budgetMenus = filterByBudget(
-            menus,
-            input.budget
-        );
+        // 1. กรองด้วยงบประมาณก่อน
+        const budgetMenus = filterByBudget(menus, input.budget);
 
-        // ไม่พบเมนู
         if (budgetMenus.length === 0) {
             return Response.json(
-                {
-                    success: false,
-                    message: "ไม่พบเมนูที่ตรงกับเงื่อนไข",
-                },
+                { success: true, recommendations: [], message: "ไม่พบเมนูที่ตรงกับเงื่อนไข" },
                 { status: 200 }
             );
         }
 
-        // คำนวณคะแนนทุกเมนู
-        const scoredMenus = budgetMenus.map((menu) =>
-            scoreMenu(menu, input)
-        );
+        // 2. ใช้ Relaxed Filter (OR logic) เพื่อให้ได้ "แนวทาง" ตามที่ผู้ใช้ต้องการ
+        const filteredMenus = applyRelaxedFilters(budgetMenus, input);
+        
+        let recommendations: ScoredMenu[] = [];
+        let discovery: ScoredMenu | null = null;
 
-        // เลือก Top 3
-        const recommendations = selectTopRecommendations(
-            scoredMenus,
-            3
-        );
-
-        // เลือก Discovery
-        const discovery = selectDiscoveryMenu(
-            scoredMenus,
-            recommendations
-        );
+        if (filteredMenus.length > 0) {
+            // ให้คะแนนตามสัดส่วนที่ตรงกัน (ตรงมากได้คะแนนมาก)
+            const scoredMenus = filteredMenus.map((menu) => scoreMenu(menu, input));
+            recommendations = selectTopRecommendations(scoredMenus, 3);
+            discovery = selectDiscoveryMenu(scoredMenus, recommendations);
+        }
 
         return Response.json({
             success: true,
@@ -91,12 +65,8 @@ export async function POST(request: Request) {
         });
     } catch (error) {
         console.error("Recommendation API Error:", error);
-
         return Response.json(
-            {
-                success: false,
-                message: "เกิดข้อผิดพลาดในการแนะนำเมนู",
-            },
+            { success: false, message: "เกิดข้อผิดพลาดในการแนะนำเมนู กรุณาลองใหม่อีกครั้ง" },
             { status: 500 }
         );
     }

@@ -1,5 +1,5 @@
 import { Menu } from "./excel";
-
+import { prisma } from "@/lib/prisma";
 export type RecommendationInput = {
     ingredients: string[];
     categories: string[];
@@ -28,6 +28,59 @@ export function filterByBudget(
 }
 
 /* =========================
+   Hard & Relaxed Filters
+========================= */
+
+export function applyHardFilters(
+  menus: Menu[],
+  input: RecommendationInput
+): Menu[] {
+  let filtered = menus;
+
+  if (input.ingredients.length > 0) {
+    filtered = filtered.filter((menu) =>
+      menu.ingredients.some((ing) => input.ingredients.includes(ing))
+    );
+  }
+
+  if (input.categories.length > 0) {
+    filtered = filtered.filter((menu) =>
+      menu.categories.some((cat) => input.categories.includes(cat))
+    );
+  }
+
+  return filtered;
+}
+
+export function applyRelaxedFilters(
+  menus: Menu[],
+  input: RecommendationInput
+): Menu[] {
+  const noFilters = input.ingredients.length === 0 && input.categories.length === 0 && input.flavors.length === 0;
+  if (noFilters) return menus;
+
+  return menus.filter((menu) => {
+    const matchIng =
+      input.ingredients.length > 0 &&
+      menu.ingredients.some((ing) => 
+        input.ingredients.some(i => ing.includes(i) || i.includes(ing))
+      );
+    const matchCat =
+      input.categories.length > 0 &&
+      menu.categories.some((cat) => 
+        input.categories.some(c => cat.includes(c) || c.includes(cat))
+      );
+    const matchFlav =
+      input.flavors.length > 0 &&
+      menu.flavors.some((flav) => 
+        input.flavors.some(f => flav.includes(f) || f.includes(flav))
+      );
+
+    return matchIng || matchCat || matchFlav;
+  });
+}
+
+/* =========================
    Ingredient Score
 ========================= */
 
@@ -36,15 +89,15 @@ export function calculateIngredientScore(
     selectedIngredients: string[]
 ): number {
     if (selectedIngredients.length === 0) {
-        return 40;
+        return 0; // ไม่มีคะแนนโบนัสถ้าไม่ได้เลือก
     }
 
     const matchedIngredients = selectedIngredients.filter(
-        (ingredient) => menu.ingredients.includes(ingredient)
+        (ingredient) => menu.ingredients.some(ing => ing.includes(ingredient) || ingredient.includes(ing))
     );
 
     const score =
-        (matchedIngredients.length / selectedIngredients.length) * 40;
+        (matchedIngredients.length / selectedIngredients.length) * 50; // น้ำหนักสูงสุด 50
 
     return Math.round(score);
 }
@@ -58,15 +111,15 @@ export function calculateCategoryScore(
     selectedCategories: string[]
 ): number {
     if (selectedCategories.length === 0) {
-        return 25;
+        return 0;
     }
 
     const matchedCategories = selectedCategories.filter(
-        (category) => menu.categories.includes(category)
+        (category) => menu.categories.some(cat => cat.includes(category) || category.includes(cat))
     );
 
     const score =
-        (matchedCategories.length / selectedCategories.length) * 25;
+        (matchedCategories.length / selectedCategories.length) * 30; // น้ำหนัก 30
 
     return Math.round(score);
 }
@@ -80,15 +133,15 @@ export function calculateFlavorScore(
     selectedFlavors: string[]
 ): number {
     if (selectedFlavors.length === 0) {
-        return 20;
+        return 0;
     }
 
     const matchedFlavors = selectedFlavors.filter(
-        (flavor) => menu.flavors.includes(flavor)
+        (flavor) => menu.flavors.some(f => f.includes(flavor) || flavor.includes(f))
     );
 
     const score =
-        (matchedFlavors.length / selectedFlavors.length) * 20;
+        (matchedFlavors.length / selectedFlavors.length) * 30; // น้ำหนัก 30
 
     return Math.round(score);
 }
@@ -102,10 +155,11 @@ export function calculateBudgetScore(
     budget?: number
 ): number {
     if (budget === undefined) {
-        return 15;
+        return 10;
     }
 
-    return menu.price <= budget ? 15 : 0;
+    // Budget ถูก Hard filter ไปแล้ว ดังนั้นถ้าผ่านเข้ามาได้จะได้ 10 คะแนนเต็ม
+    return 10;
 }
 
 /* =========================
@@ -148,7 +202,7 @@ export function scoreMenu(
 
     if (input.ingredients.length > 0) {
         const matchedIngredients = input.ingredients.filter(
-            (ingredient) => menu.ingredients.includes(ingredient)
+            (ingredient) => menu.ingredients.some(ing => ing.includes(ingredient) || ingredient.includes(ing))
         );
 
         if (matchedIngredients.length > 0) {
@@ -162,7 +216,7 @@ export function scoreMenu(
 
     if (input.categories.length > 0) {
         const matchedCategories = input.categories.filter(
-            (category) => menu.categories.includes(category)
+            (category) => menu.categories.some(cat => cat.includes(category) || category.includes(cat))
         );
 
         if (matchedCategories.length > 0) {
@@ -176,7 +230,7 @@ export function scoreMenu(
 
     if (input.flavors.length > 0) {
         const matchedFlavors = input.flavors.filter(
-            (flavor) => menu.flavors.includes(flavor)
+            (flavor) => menu.flavors.some(f => f.includes(flavor) || flavor.includes(f))
         );
 
         if (matchedFlavors.length > 0) {
@@ -362,4 +416,79 @@ export function selectDiscoveryMenu(
         pool[Math.floor(Math.random() * pool.length)];
 
     return randomItem.menu;
+}
+
+/* =========================
+   Personalized Recommendations (New)
+========================= */
+
+export async function getPersonalizedRecommendations(userId?: string) {
+  const defaultMenus = async () => prisma.menu.findMany({
+    take: 5,
+    include: {
+      flavors: { include: { flavor: true } },
+      categories: { include: { category: true } },
+      ingredients: { include: { ingredient: true } }
+    }
+  });
+
+  if (!userId) return defaultMenus();
+
+  const userOrders = await prisma.orderItem.findMany({
+    where: { order: { userId } },
+    include: {
+      menu: {
+        include: { 
+          flavors: true,
+          categories: true,
+          ingredients: true
+        }
+      }
+    }
+  });
+
+  if (userOrders.length === 0) return defaultMenus();
+
+  // Calculate frequency maps for user's preferences
+  const flavorFreq: Record<number, number> = {};
+  const categoryFreq: Record<number, number> = {};
+  const ingredientFreq: Record<number, number> = {};
+  
+  userOrders.forEach(item => {
+    item.menu.flavors.forEach(mf => {
+      flavorFreq[mf.flavorId] = (flavorFreq[mf.flavorId] || 0) + item.quantity;
+    });
+    item.menu.categories.forEach(mc => {
+      categoryFreq[mc.categoryId] = (categoryFreq[mc.categoryId] || 0) + item.quantity;
+    });
+    item.menu.ingredients.forEach(mi => {
+      ingredientFreq[mi.ingredientId] = (ingredientFreq[mi.ingredientId] || 0) + item.quantity;
+    });
+  });
+
+  // Fetch all menus to score them
+  const allMenus = await prisma.menu.findMany({
+    include: {
+      flavors: { include: { flavor: true } },
+      categories: { include: { category: true } },
+      ingredients: { include: { ingredient: true } }
+    }
+  });
+
+  // Calculate a personalized score for each menu
+  const scoredMenus = allMenus.map(menu => {
+    let score = 0;
+    menu.flavors.forEach(mf => { score += (flavorFreq[mf.flavorId] || 0) * 2; }); // Flavor has weight 2
+    menu.categories.forEach(mc => { score += (categoryFreq[mc.categoryId] || 0) * 1.5; }); // Category weight 1.5
+    menu.ingredients.forEach(mi => { score += (ingredientFreq[mi.ingredientId] || 0) * 1; }); // Ingredient weight 1
+    
+    return { menu, score };
+  });
+
+  // Sort by score descending and return top 5
+  scoredMenus.sort((a, b) => b.score - a.score);
+  
+  // Filter out menus the user has already ordered recently to provide variety? 
+  // Let's just return the highest scored ones.
+  return scoredMenus.slice(0, 5).map(sm => sm.menu);
 }

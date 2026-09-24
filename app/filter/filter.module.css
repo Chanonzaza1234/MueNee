@@ -1,0 +1,227 @@
+.pageWrapper {
+    min-height: 100vh;
+    background-color: #121212;
+    color: #ffffff;
+    position: relative;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-prompt), sans-serif;
+}
+
+.radialGlow {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70vw;
+    height: 70vw;
+    background: radial-gradient(circle, rgba(255, 122, 0, 0.15) 0%, rgba(18, 18, 18, 0) 65%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px 32px;
+    position: relative;
+    z-index: 10;
+    gap: 12px;
+}
+
+.logoRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.brandName {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: 2px;
+}
+
+.backBtn {
+    background-color: transparent;
+    color: #a3a3a3;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 0;
+    transition: color 0.3s ease, transform 0.3s ease;
+    font-family: inherit;
+}
+
+.backBtn:hover {
+    color: #ffffff;
+    transform: translateX(-4px);
+}
+
+.mainContent {
+    flex: 1;
+    padding: 12px 32px 32px;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding-bottom: 140px; 
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sectionTitle {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+    color: #ffffff;
+}
+
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.itemBtn {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border: 2px solid transparent;
+    padding: 12px 24px;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    font-family: inherit;
+    outline: none;
+}
+
+.itemBtn:hover {
+    background-color: #383838;
+    transform: translateY(-2px);
+}
+
+.activeBtn {
+    background-color: rgba(255, 122, 0, 0.15);
+    border-color: #FF7A00;
+    color: #FF7A00;
+    box-shadow: 0 0 20px rgba(255, 122, 0, 0.3);
+}
+
+.moreBtn {
+    background-color: transparent;
+    color: #FF7A00;
+    border: 2px dashed #4a4a4a;
+    padding: 12px 24px;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.moreBtn:hover {
+    background-color: rgba(255, 122, 0, 0.05);
+    border-color: #FF7A00;
+}
+
+.dropdownIcon {
+    transition: transform 0.3s ease;
+}
+
+.moreBtn:hover .dropdownIcon {
+    transform: translateY(3px);
+}
+
+.bottomAction {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+    background: rgba(18, 18, 18, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 20;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.goToEatBtn {
+    background: linear-gradient(135deg, #FF9933 0%, #FF5500 100%);
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 800;
+    padding: 18px 48px;
+    border-radius: 40px;
+    border: none;
+    width: 100%;
+    max-width: 450px;
+    cursor: pointer;
+    box-shadow: 0 8px 30px rgba(255, 122, 0, 0.4);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    font-family: inherit;
+    letter-spacing: 2px;
+}
+
+.goToEatBtn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(255, 122, 0, 0.5);
+    background: linear-gradient(135deg, #FFB066 0%, #FF7A00 100%);
+}
+
+.goToEatBtn:active {
+    transform: translateY(2px);
+    box-shadow: 0 5px 20px rgba(255, 122, 0, 0.4);
+}
+
+.goToEatBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Responsive constraints */
+@media (min-width: 768px) {
+    .pageWrapper {
+        align-items: center;
+    }
+    
+    .header, .mainContent, .bottomAction {
+        width: 100%;
+        max-width: 768px;
+    }
+    
+    .bottomAction {
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 24px 24px 0 0;
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }
+}

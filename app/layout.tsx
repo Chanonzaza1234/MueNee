@@ -15,6 +15,8 @@ export const metadata: Metadata = {
     "Personalized Food Recommendation System ระบบช่วยเลือกเมนูอาหารตามวัตถุดิบ ประเภท รสชาติ และงบประมาณของคุณ",
 };
 
+import { Providers } from "@/components/Providers";
+
 export default function RootLayout({
   children,
 }: {
@@ -23,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="th" className={`${prompt.variable} font-sans h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#F7F7F7] text-[#1F2937]">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
